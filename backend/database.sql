@@ -10,3 +10,9 @@ CREATE TABLE tasks (
     createdAt TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     completedAt TIMESTAMP WITH TIME ZONE
 );
+
+CREATE TABLE categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL UNIQUE,
+    createdAt TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

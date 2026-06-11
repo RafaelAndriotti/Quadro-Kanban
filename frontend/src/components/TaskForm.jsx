@@ -1,11 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchCategories, createCategory } from '../services/api';
+
+const DEFAULT_CATEGORIES = [
+  "Desenvolvimento",
+  "Suporte / Bug",
+  "Reunião",
+  "Documentação",
+  "Administrativo",
+  "Outros"
+];
 
 export default function TaskForm({ onAddTask }) {
   const [desc, setDesc] = useState('');
   const [observacao, setObservacao] = useState('');
   const [urgency, setUrgency] = useState('Baixa');
-  const [category, setCategory] = useState('Desenvolvimento');
+  
+  const [dbCategories, setDbCategories] = useState([]);
+  
+  const [category, setCategory] = useState(DEFAULT_CATEGORIES[0]);
   const [requester, setRequester] = useState('');
+  
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  const loadCategories = async () => {
+    try {
+      const data = await fetchCategories();
+      const catNames = data.map(c => c.name);
+      setDbCategories(catNames);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const allCategories = Array.from(new Set([...DEFAULT_CATEGORIES, ...dbCategories]));
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -14,8 +46,26 @@ export default function TaskForm({ onAddTask }) {
     setDesc('');
     setObservacao('');
     setUrgency('Baixa');
-    setCategory('Desenvolvimento');
+    setCategory(allCategories[0] || DEFAULT_CATEGORIES[0]);
     setRequester('');
+  };
+
+  const handleAddCategory = async () => {
+    const trimmed = newCategoryName.trim();
+    if (trimmed && !allCategories.includes(trimmed)) {
+      try {
+        await createCategory(trimmed);
+        await loadCategories();
+        setCategory(trimmed);
+      } catch (error) {
+        console.error(error);
+        alert(error.message);
+      }
+    } else if (allCategories.includes(trimmed)) {
+      setCategory(trimmed);
+    }
+    setIsAddingCategory(false);
+    setNewCategoryName('');
   };
 
   return (
@@ -43,14 +93,70 @@ export default function TaskForm({ onAddTask }) {
           </div>
           <div className="form-group">
             <label>Categoria</label>
-            <select value={category} onChange={e => setCategory(e.target.value)}>
-              <option value="Desenvolvimento">Desenvolvimento</option>
-              <option value="Suporte / Bug">Suporte / Bug</option>
-              <option value="Reunião">Reunião</option>
-              <option value="Documentação">Documentação</option>
-              <option value="Administrativo">Administrativo</option>
-              <option value="Outros">Outros</option>
-            </select>
+            {!isAddingCategory ? (
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <select value={category} onChange={e => setCategory(e.target.value)} style={{ flex: 1 }}>
+                  {allCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <button 
+                  type="button" 
+                  onClick={() => setIsAddingCategory(true)}
+                  style={{
+                    padding: '0 0.5rem',
+                    background: 'var(--panel-bg)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '0.375rem',
+                    color: 'var(--text-color)',
+                    cursor: 'pointer'
+                  }}
+                  title="Nova Categoria"
+                >
+                  +
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input 
+                  type="text" 
+                  value={newCategoryName} 
+                  onChange={e => setNewCategoryName(e.target.value)}
+                  placeholder="Nome da categoria"
+                  style={{ flex: 1 }}
+                  autoFocus
+                />
+                <button 
+                  type="button" 
+                  onClick={handleAddCategory}
+                  style={{
+                    padding: '0 0.5rem',
+                    background: 'var(--primary)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '0.375rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  OK
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => { setIsAddingCategory(false); setNewCategoryName(''); }}
+                  style={{
+                    padding: '0 0.5rem',
+                    background: 'var(--panel-bg)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '0.375rem',
+                    color: 'var(--text-color)',
+                    cursor: 'pointer'
+                  }}
+                  title="Cancelar"
+                >
+                  X
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

@@ -1,4 +1,5 @@
 export const API_URL = 'http://localhost:3000/api/tasks';
+export const CATEGORIES_API_URL = 'http://localhost:3000/api/categories';
 
 export const fetchTasks = async () => {
   const res = await fetch(API_URL);
@@ -41,5 +42,24 @@ export const deleteTask = async (id) => {
     method: 'DELETE'
   });
   if (!res.ok) throw new Error('Falha ao deletar a tarefa');
+  return res.json();
+};
+
+export const fetchCategories = async () => {
+  const res = await fetch(CATEGORIES_API_URL);
+  if (!res.ok) throw new Error('Falha ao carregar as categorias');
+  return res.json();
+};
+
+export const createCategory = async (name) => {
+  const res = await fetch(CATEGORIES_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name })
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Falha ao criar categoria');
+  }
   return res.json();
 };
